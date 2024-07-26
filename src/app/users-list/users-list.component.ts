@@ -1,45 +1,46 @@
-import { Component } from '@angular/core';
-import { User, UserService } from './users.service';
-import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { OldUserService, User } from './old-users.service';
+import { Observable, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-user-list',
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './users-list.component.html',
 })
-export class UserListComponent {
-  @Component({
-    selector: 'app-user-list',
-    templateUrl: './user-list.component.html',
-  })
-  users: ReturnType<UserService['getUsers']>;
-  loading: ReturnType<UserService['isLoading']>;
-  error: ReturnType<UserService['getError']>;
-  filteredUsers: UserService['filteredUsers'];
+export class UserListComponent implements OnInit, OnDestroy {
+  users$: Observable<User[]>;
+  loading$: Observable<boolean>;
+  error$: Observable<string | null>;
+  filteredUsers$: Observable<User[]>;
+  private subscription: Subscription = new Subscription();
 
-  constructor(private userService: UserService) {
-    this.users = this.userService.getUsers();
-    this.loading = this.userService.isLoading();
-    this.error = this.userService.getError();
-    this.filteredUsers = this.userService.filteredUsers;
+  constructor(private userService: OldUserService) {
+    this.users$ = this.userService.users$;
+    this.loading$ = this.userService.loading$;
+    this.error$ = this.userService.error$;
+    this.filteredUsers$ = this.userService.filteredUsers$;
   }
 
   ngOnInit() {
     this.loadUsers();
   }
 
-  loadUsers() {
-    this.userService.fetchUsers().subscribe();
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
   }
 
-  addUser(user: User) {
-    this.userService.addUser(user);
+  loadUsers() {
+    this.subscription.add(this.userService.fetchUsers().subscribe());
+  }
+
+  updateSearch(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.userService.updateSearchTerm(input.value);
   }
 
   removeUser(id: number) {
     this.userService.removeUser(id);
-  }
-
-  updateSearch(term: string) {
-    this.userService.updateSearchTerm(term);
   }
 }

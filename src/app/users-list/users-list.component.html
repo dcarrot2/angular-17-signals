@@ -1,18 +1,24 @@
-@if (!loading()) { @if (error()) {
-<p class="error">{{ error() }}</p>
-} @if (filteredUsers().length) {
-<ul>
-  @for (user of filteredUsers(); track user.id) {
-  <li>
-    {{ user.name }}
-    <button (click)="removeUser(user.id)">Remove</button>
-  </li>
-  }
-</ul>
-} @else {
-<p>No users found.</p>
-} } @else {
-<p>Loading users...</p>
-}
+<input (input)="updateSearch($event)" placeholder="Search users..." />
+
+<ng-container *ngIf="(loading$ | async) === false; else loadingTemplate">
+  <ng-container *ngIf="error$ | async as error">
+    <p class="error">{{ error }}</p>
+  </ng-container>
+  <ng-container *ngIf="filteredUsers$ | async as users">
+    <ul *ngIf="users.length; else noUsers">
+      <li *ngFor="let user of users">
+        {{ user.name }}
+        <button (click)="removeUser(user.id)">Remove</button>
+      </li>
+    </ul>
+    <ng-template #noUsers>
+      <p>No users found.</p>
+    </ng-template>
+  </ng-container>
+</ng-container>
+
+<ng-template #loadingTemplate>
+  <p>Loading users...</p>
+</ng-template>
 
 <button (click)="loadUsers()">Reload Users</button>
